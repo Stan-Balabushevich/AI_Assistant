@@ -1,8 +1,18 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
+}
+
+// Load secrets.properties file
+val secretsPropertiesFile = rootProject.file("keystore.properties")
+val secretsProperties = Properties()
+if (secretsPropertiesFile.exists()) {
+    secretsProperties.load(FileInputStream(secretsPropertiesFile))
 }
 
 android {
@@ -20,6 +30,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Define BuildConfig fields for your API keys
+        buildConfigField("String", "API_KEY", "\"${secretsProperties["API_KEY"]}\"")
+        //buildConfigField("String", "ANOTHER_SECRET", "\"${secretsProperties["ANOTHER_SECRET"]}\"")
     }
 
     buildTypes {
@@ -41,6 +55,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // to enable BuildConfig feature
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

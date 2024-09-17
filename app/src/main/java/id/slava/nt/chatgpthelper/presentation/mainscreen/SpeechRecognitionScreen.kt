@@ -18,10 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import id.slava.nt.chatgpthelper.data.utils.PermissionsHandler
 import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
 import id.slava.nt.chatgpthelper.presentation.buttons.MicrophoneButton
@@ -33,6 +33,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     val language = "en-EN"
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
 
     // Use `remember` to create instances once per composition
     val speechRecognitionHelper = remember { SpeechRecognitionHelper(context, language) }
