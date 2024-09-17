@@ -23,6 +23,7 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
         val authHeader = "Bearer $apiKey"
 
         val messages = listOf(
+            Message(role = "system", content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."),
             Message(role = "user", content = userMessage)
         )
         val request = ChatGPTRequest(messages = messages)
