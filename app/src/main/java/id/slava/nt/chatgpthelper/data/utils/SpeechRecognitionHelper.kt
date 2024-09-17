@@ -8,22 +8,47 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 
-class SpeechRecognitionHelper(private val context: Context, language: String) {
+class SpeechRecognitionHelper(private val context: Context, private var language: String) {
 
-    private val speechRecognizer: SpeechRecognizer =
-        SpeechRecognizer.createSpeechRecognizer(context)
-    private val recognizerIntent: Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        putExtra(RecognizerIntent.EXTRA_LANGUAGE, language)
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var recognizerIntent: Intent? = null
+    private var recognitionListener: RecognitionListener? = null
+
+    init {
+        initializeRecognizer()
     }
 
-    private fun setupSpeechRecognizer(
+    private fun initializeRecognizer() {
+        // Clean up any existing recognizer
+        speechRecognizer?.destroy()
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+
+        // Initialize recognizer intent with the current language
+        recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, language)
+        }
+
+        // Re-attach the recognition listener
+        recognitionListener?.let {
+            speechRecognizer?.setRecognitionListener(it)
+        }
+    }
+
+    fun updateLanguage(newLanguage: String) {
+        language = newLanguage
+        initializeRecognizer() // Re-initialize with the new language
+    }
+
+    private fun setupRecognitionListener(
         onResults: (String) -> Unit,
         onReadyForSpeech: () -> Unit = {},
         onError: (Int) -> Unit = {}
     ) {
-
-        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+        recognitionListener = object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle) {
                 onReadyForSpeech()
             }
@@ -43,7 +68,7 @@ class SpeechRecognitionHelper(private val context: Context, language: String) {
             override fun onResults(results: Bundle) {
                 val matches: ArrayList<String>? =
                     results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (matches != null) {
+                if (!matches.isNullOrEmpty()) {
                     val text = matches[0] // The best match
                     onResults(text)
                 } else {
@@ -52,35 +77,32 @@ class SpeechRecognitionHelper(private val context: Context, language: String) {
             }
 
             override fun onPartialResults(partialResults: Bundle) {
-
                 val matches: ArrayList<String>? =
                     partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (matches != null) {
+                if (!matches.isNullOrEmpty()) {
                     val text = matches[0] // The best match
                     onResults(text)
                 }
             }
 
             override fun onEvent(eventType: Int, params: Bundle) {}
-        })
+        }
+        speechRecognizer?.setRecognitionListener(recognitionListener)
     }
 
     fun startListening() {
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            speechRecognizer.startListening(recognizerIntent)
+            speechRecognizer?.startListening(recognizerIntent)
         }
     }
 
     fun stopListening() {
-        if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            speechRecognizer.stopListening()
-        }
+        speechRecognizer?.stopListening()
     }
 
     fun destroy() {
-        if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            speechRecognizer.destroy()
-        }
+        speechRecognizer?.destroy()
+        speechRecognizer = null
     }
 
     // Helper function to set up the speech recognizer
@@ -88,7 +110,7 @@ class SpeechRecognitionHelper(private val context: Context, language: String) {
         onTextUpdate: (String) -> Unit,
         onListeningStateChange: (Boolean) -> Unit
     ) {
-        this.setupSpeechRecognizer(
+        setupRecognitionListener(
             onReadyForSpeech = {
                 onListeningStateChange(true)  // Start listening
             },
@@ -115,5 +137,5 @@ class SpeechRecognitionHelper(private val context: Context, language: String) {
             }
         )
     }
-
 }
+
