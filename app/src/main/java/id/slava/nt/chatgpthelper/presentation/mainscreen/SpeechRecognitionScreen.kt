@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,15 +25,21 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import id.slava.nt.chatgpthelper.data.utils.PermissionsHandler
 import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
+import id.slava.nt.chatgpthelper.domain.model.ChatMessage
 import id.slava.nt.chatgpthelper.presentation.buttons.MicrophoneButton
 import id.slava.nt.chatgpthelper.presentation.dialogs.PermissionDialog
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 @Composable
 fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     val language = "en-EN"
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val viewModelMain: MainScreenViewModel = koinInject()
+
+    val responseState by viewModelMain.responseState.collectAsState()
 
 
     // Use `remember` to create instances once per composition
@@ -43,8 +50,10 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
 
     // State variables
     var text by remember { mutableStateOf("") }
+    var responseText by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
     var permissionsGranted by remember { mutableStateOf(false) }
+    var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
 
     // Permission dialog screen
     PermissionDialog(showDialog = showDialog, onDismiss = { showDialog = false }, permissionName = "Audio Record")
@@ -63,7 +72,9 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                     onGranted = { permission ->
                         if (permission == Manifest.permission.RECORD_AUDIO) {
                             speechRecognitionHelper.startRecognition(
-                                onTextUpdate = { text = it },
+                                onTextUpdate = {
+                                    viewModelMain.getChatGPTResponse(it)
+                                    text = it },
                                 onListeningStateChange = { isListening = it })
                             permissionsGranted = true
                         }
@@ -95,6 +106,22 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         }
     }
 
+    // Observe changes in responseState and update text accordingly
+    LaunchedEffect(responseState) {
+        when {
+            responseState.isLoading -> {
+                responseText = "Loading response..."
+            }
+            responseState.error != null -> {
+                responseText = "Error: ${responseState.error}"
+            }
+            responseState.response != null -> {
+                responseText = "Response: ${responseState.response}"
+            }
+        }
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -108,6 +135,9 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
             Text(text = text)
             // Microphone button with touch handling for speech recognition
             MicrophoneButton(speechRecognitionHelper = speechRecognitionHelper)
+
+            Text(text = responseText)
+
         } else{
             Text(text = "Permissions not granted")
             Button(onClick = {
@@ -115,6 +145,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
             }) {
                 Text(text = "Request Permissions")
             }
+
         }
     }
 }
