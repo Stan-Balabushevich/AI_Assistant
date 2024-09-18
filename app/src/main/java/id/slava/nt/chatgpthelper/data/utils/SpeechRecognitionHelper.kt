@@ -77,12 +77,12 @@ class SpeechRecognitionHelper(private val context: Context, private var language
             }
 
             override fun onPartialResults(partialResults: Bundle) {
-                val matches: ArrayList<String>? =
-                    partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (!matches.isNullOrEmpty()) {
-                    val text = matches[0] // The best match
-                    onResults(text)
-                }
+//                val matches: ArrayList<String>? =
+//                    partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+//                if (!matches.isNullOrEmpty()) {
+//                    val text = matches[0] // The best match
+//                    onResults(text)
+//                }
             }
 
             override fun onEvent(eventType: Int, params: Bundle) {}
@@ -108,6 +108,7 @@ class SpeechRecognitionHelper(private val context: Context, private var language
     // Helper function to set up the speech recognizer
     fun startRecognition(
         onTextUpdate: (String) -> Unit,
+        onErrorMessage: (String) -> Unit = {},
         onListeningStateChange: (Boolean) -> Unit
     ) {
         setupRecognitionListener(
@@ -132,7 +133,7 @@ class SpeechRecognitionHelper(private val context: Context, private var language
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
                     else -> "Unknown error"
                 }
-                onTextUpdate(errorMessage)
+                onErrorMessage(errorMessage)
                 Log.e("SpeechRecognizer", "Error: $errorMessage")
             }
         )

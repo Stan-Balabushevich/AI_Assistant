@@ -1,6 +1,7 @@
 package id.slava.nt.chatgpthelper.presentation.mainscreen
 
 import android.Manifest
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -52,6 +54,8 @@ import id.slava.nt.chatgpthelper.domain.model.Language
 import id.slava.nt.chatgpthelper.presentation.buttons.MicrophoneButton
 import id.slava.nt.chatgpthelper.presentation.dialogs.PermissionDialog
 import id.slava.nt.chatgpthelper.presentation.messages.BotMessageBubble
+import id.slava.nt.chatgpthelper.presentation.messages.ErrorMessageBubble
+import id.slava.nt.chatgpthelper.presentation.messages.LoadingMessageBubble
 import id.slava.nt.chatgpthelper.presentation.messages.UserMessageBubble
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -62,7 +66,13 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     val languages = listOf(
         Language("en-EN", "English"),
         Language("es-ES", "Spanish"),
-        Language("ru-RU", "Russian")
+        Language("ru-RU", "Russian"),
+        Language("uk-UA", "Ukrainian"),
+        Language("fr-FR", "French"),
+        Language("nrf-NO", "Norwegian"),
+        Language("de-DE", "German"),
+        Language("it-IT", "Italian"),
+        Language("pt-PT", "Portuguese")
     )
 
     var isLanguageMenuExpanded by remember { mutableStateOf(false) }
@@ -96,7 +106,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     )
 
     fun sendMessage(messageContent: String) {
-        val userMessage = ChatMessage(content = messageContent, isUser = true)
+        val userMessage = ChatMessage.UserMessage(content = messageContent)
         messages = messages + userMessage // Update the messages list with the user's message
 
         // Call the ViewModel to get the response from ChatGPT
@@ -120,6 +130,9 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                                 onTextUpdate = {
                                     sendMessage(it)
                                     userInputText = it
+                                },
+                                onErrorMessage = {
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                 },
                                 onListeningStateChange = { isListening = it })
                             permissionsGranted = true
@@ -156,21 +169,30 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     LaunchedEffect(responseState) {
         when {
             responseState.isLoading -> {
-                // Optionally show loading indicator in messages
+                // Add LoadingMessage if not already present
+                if (messages.lastOrNull() !is ChatMessage.LoadingMessage) {
+                    messages = messages + ChatMessage.LoadingMessage
+                }
             }
 
             responseState.error != null -> {
-                val errorMessage =
-                    ChatMessage(content = "Error: ${responseState.error}", isUser = false)
+                // Remove LoadingMessage
+                messages = messages.filterNot { it is ChatMessage.LoadingMessage }
+
+                val errorMessage = ChatMessage.ErrorMessage(content = "Error: ${responseState.error}")
                 messages = messages + errorMessage
             }
 
             responseState.response != null -> {
-                val botMessage = ChatMessage(content = responseState.response!!, isUser = false)
+                // Remove LoadingMessage
+                messages = messages.filterNot { it is ChatMessage.LoadingMessage }
+
+                val botMessage = ChatMessage.BotMessage(content = responseState.response!!)
                 messages = messages + botMessage
             }
         }
     }
+
 
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) {
@@ -193,14 +215,8 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-//            Text(text = "ChatGPT Helper", fontSize = 24.sp)
-
-//            Text(text = selectedLanguage, fontSize = 24.sp)
-
 
             Column {
-//                IconButton(onClick = { isLanguageMenuExpanded = true }) {
-//                    Icon(Icons.Default.Home, contentDescription = "Select Language")}
 
                 Text(text = selectedLanguage.name, fontSize = 24.sp, modifier = Modifier.clickable {
                     isLanguageMenuExpanded = true
@@ -221,15 +237,13 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                             )
                         }
                     }
-
             }
-
 
             IconButton(onClick = {
                 messages = listOf()
                 userInputText = ""
             }) {
-                Icon(Icons.Default.Delete, contentDescription = "Send")
+                Icon(Icons.Default.Delete, contentDescription = "Clear Chat")
             }
 
         }
@@ -242,10 +256,19 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         ) {
 
             items(messages) { message ->
-                if (message.isUser) {
-                    UserMessageBubble(message.content)
-                } else {
-                    BotMessageBubble(message.content)
+                when (message) {
+                    is ChatMessage.UserMessage -> {
+                        UserMessageBubble(message.content)
+                    }
+                    is ChatMessage.BotMessage -> {
+                        BotMessageBubble(message.content)
+                    }
+                    is ChatMessage.LoadingMessage -> {
+                        LoadingMessageBubble()
+                    }
+                    is ChatMessage.ErrorMessage -> {
+                        ErrorMessageBubble(message.content)
+                    }
                 }
             }
         }
@@ -266,7 +289,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                     placeholder = { Text( text = when(selectedLanguage.code){
                         "en-EN" -> "Type your message"
                         "es-ES" -> "Escribe tu mensaje"
-                        "ru-Ru" -> "Type your message in russian"
+                        "ru-RU" -> "Type your message in russian"
                         else -> "Type your message default"
                     }) },
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
