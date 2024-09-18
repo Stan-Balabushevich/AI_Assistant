@@ -97,7 +97,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     var permissionsGranted by remember { mutableStateOf(false) }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
     // List to store the entire conversation history
-    val conversationHistory = mutableStateListOf<Message>()
+    val conversationHistory = remember { mutableStateListOf<Message>() }
 
     // Permission dialog screen
     PermissionDialog(
