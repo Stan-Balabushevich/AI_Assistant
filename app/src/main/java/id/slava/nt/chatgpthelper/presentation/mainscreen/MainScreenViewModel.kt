@@ -3,6 +3,7 @@ package id.slava.nt.chatgpthelper.presentation.mainscreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.slava.nt.chatgpthelper.common.Resource
+import id.slava.nt.chatgpthelper.data.remote.dt_object.Message
 import id.slava.nt.chatgpthelper.domain.usecase.GetChatGPTResponseUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,9 +16,9 @@ class MainScreenViewModel(private val getChatGPTResponseUseCase: GetChatGPTRespo
 
 
 
-    fun getChatGPTResponse(userMessage: String) {
+    fun getChatGPTResponse(userMessages: List<Message>) {
         viewModelScope.launch {
-            getChatGPTResponseUseCase(userMessage).collect { result ->
+            getChatGPTResponseUseCase(userMessages).collect { result ->
                 when(result) {
                     is Resource.Error -> _responseState.value = ResponseState(error = result.message ?: "An unexpected error occurred")
                     is Resource.Loading -> _responseState.value = ResponseState(isLoading = true)

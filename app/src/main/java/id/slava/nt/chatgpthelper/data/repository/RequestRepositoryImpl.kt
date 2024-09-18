@@ -16,17 +16,19 @@ import java.io.IOException
 
 class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : RequestRepository {
 
-    override suspend fun getChatGPTResponse(userMessage: String): Flow<Resource<GptResponse>> = flow {
+    override suspend fun getChatGPTResponse(userMessages: List<Message>): Flow<Resource<GptResponse>> = flow {
         emit(Resource.Loading())
 
         val apiKey = BuildConfig.API_KEY
         val authHeader = "Bearer $apiKey"
 
-        val messages = listOf(
-            Message(role = "system", content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."),
-            Message(role = "user", content = userMessage)
-        )
-        val request = ChatGPTRequest(messages = messages)
+//        val messages = listOf(
+//            Message(role = "system", content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."),
+//            Message(role = "user", content = userMessage)
+//        )
+        // Convert userMessages to ChatGPTRequest format
+//        val messages = userMessages.map { Message(role = "user", content = it) }
+        val request = ChatGPTRequest(messages = userMessages)
 
         try {
             val response = openAIApiService.getCompletion(authHeader, request)

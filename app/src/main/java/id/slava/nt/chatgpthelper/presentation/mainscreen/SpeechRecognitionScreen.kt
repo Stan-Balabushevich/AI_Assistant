@@ -4,7 +4,6 @@ import android.Manifest
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,16 +16,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -35,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import id.slava.nt.chatgpthelper.data.remote.dt_object.Message
 import id.slava.nt.chatgpthelper.data.utils.PermissionsHandler
 import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
 import id.slava.nt.chatgpthelper.domain.model.ChatMessage
@@ -68,6 +66,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         Language("es-ES", "Spanish"),
         Language("ru-RU", "Russian"),
         Language("uk-UA", "Ukrainian"),
+        Language("pl-PL", "Polish"),
         Language("fr-FR", "French"),
         Language("nrf-NO", "Norwegian"),
         Language("de-DE", "German"),
@@ -97,6 +96,8 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     var showDialog by remember { mutableStateOf(false) }
     var permissionsGranted by remember { mutableStateOf(false) }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+    // List to store the entire conversation history
+    val conversationHistory = mutableStateListOf<Message>()
 
     // Permission dialog screen
     PermissionDialog(
@@ -109,8 +110,14 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         val userMessage = ChatMessage.UserMessage(content = messageContent)
         messages = messages + userMessage // Update the messages list with the user's message
 
+        // Add the user's message to the conversation history
+        conversationHistory.add(Message(role = "user", content = messageContent))
+
         // Call the ViewModel to get the response from ChatGPT
-        viewModelMain.getChatGPTResponse(messageContent)
+//        viewModelMain.getChatGPTResponse(conversationHistory)
+
+        val truncatedHistory = getTruncatedHistory(conversationHistory)
+        viewModelMain.getChatGPTResponse(truncatedHistory)
     }
 
     DisposableEffect(Unit) {
@@ -189,10 +196,11 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
 
                 val botMessage = ChatMessage.BotMessage(content = responseState.response!!)
                 messages = messages + botMessage
+
+                conversationHistory.add(Message(role = "assistant", content = botMessage.content))
             }
         }
     }
-
 
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) {
@@ -241,6 +249,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
 
             IconButton(onClick = {
                 messages = listOf()
+                conversationHistory.clear()
                 userInputText = ""
             }) {
                 Icon(Icons.Default.Delete, contentDescription = "Clear Chat")
@@ -322,4 +331,25 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         }
     }
 }
+
+private fun getTruncatedHistory(history: List<Message>, maxTokens: Int = 6000): List<Message> {
+    var tokenCount = 0
+    val truncatedHistory = mutableListOf<Message>()
+
+    // Traverse the list from the most recent message to the oldest
+    for (message in history.asReversed()) {
+        val tokens = estimateTokens(message.content)
+        if (tokenCount + tokens > maxTokens) break
+        truncatedHistory.add(0, message) // Add at the front to preserve order
+        tokenCount += tokens
+    }
+
+    return truncatedHistory
+}
+
+// Rough estimate: 1 token ≈ 4 characters
+private fun estimateTokens(text: String): Int {
+    return text.length / 4
+}
+
 
