@@ -22,13 +22,12 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
         val apiKey = BuildConfig.API_KEY
         val authHeader = "Bearer $apiKey"
 
-//        val messages = listOf(
-//            Message(role = "system", content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."),
-//            Message(role = "user", content = userMessage)
-//        )
+        val messages = listOf(
+            Message(role = "system", content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."),
+        ) + userMessages
         // Convert userMessages to ChatGPTRequest format
 //        val messages = userMessages.map { Message(role = "user", content = it) }
-        val request = ChatGPTRequest(messages = userMessages)
+        val request = ChatGPTRequest(messages = messages)
 
         try {
             val response = openAIApiService.getCompletion(authHeader, request)

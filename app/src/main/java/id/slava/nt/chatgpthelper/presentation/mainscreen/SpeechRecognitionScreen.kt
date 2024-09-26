@@ -213,7 +213,8 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .padding(top = 40.dp),
+            .padding(top = 20.dp)
+            .padding(bottom = 20.dp),
 
         ) {
         Row(
