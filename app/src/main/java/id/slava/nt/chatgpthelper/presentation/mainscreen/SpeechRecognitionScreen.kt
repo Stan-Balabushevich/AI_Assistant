@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -280,8 +281,10 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                 }
             )
         },
+        floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* Handle FAB click */ }) {
+            FloatingActionButton(
+                onClick = { /* Handle FAB click */ }) {
                 MicrophoneButton(speechRecognitionHelper)
             }
 
@@ -344,6 +347,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                                         onClick = {
                                             selectedGeminiModel = model
                                             isGeminiModelMenuExpanded = false
+                                            Toast.makeText(context, model.modelDescription, Toast.LENGTH_LONG).show()
                                             viewModelMain.updateGeminiModel(model)
                                         }
                                     )
@@ -368,6 +372,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                                         onClick = {
                                             selectedGptModel = model
                                             isGptModelMenuExpanded = false
+                                            Toast.makeText(context, model.modelDescription, Toast.LENGTH_LONG).show()
                                             viewModelMain.updateGptModel(model)
                                         }
                                     )
@@ -412,7 +417,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .padding(bottom = 46.dp),
+                            .padding(bottom = 56.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
 
