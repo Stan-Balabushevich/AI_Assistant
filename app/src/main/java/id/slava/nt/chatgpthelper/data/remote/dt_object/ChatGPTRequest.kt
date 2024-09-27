@@ -1,6 +1,7 @@
 package id.slava.nt.chatgpthelper.data.remote.dt_object
 
-import id.slava.nt.chatgpthelper.domain.model.GptResponse
+import id.slava.nt.chatgpthelper.domain.model.BotResponse
+import id.slava.nt.chatgpthelper.domain.model.UserRequest
 
 data class ChatGPTRequest(
     val model: String = "gpt-4o-mini", // Model name, e.g., "gpt-4"
@@ -20,8 +21,20 @@ data class Choice(
     val message: Message
 )
 
-fun ChatGPTResponse.toGptResponse(): GptResponse {
+fun ChatGPTResponse.toGptResponse(): BotResponse {
     val response = choices.firstOrNull()?.message?.content
-    return GptResponse(response)
+    return BotResponse(response)
 
 }
+
+fun Message.toUserRequest(): UserRequest =
+    UserRequest(
+        role = role,
+        content = content
+    )
+
+fun UserRequest.toMessage(): Message =
+    Message(
+        role = role,
+        content = content
+    )

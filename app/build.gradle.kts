@@ -33,7 +33,7 @@ android {
 
         // Define BuildConfig fields for your API keys
         buildConfigField("String", "API_KEY", "\"${secretsProperties["API_KEY"]}\"")
-        //buildConfigField("String", "ANOTHER_SECRET", "\"${secretsProperties["ANOTHER_SECRET"]}\"")
+        buildConfigField("String", "API_KEY_GEMINI", "\"${secretsProperties["API_KEY_GEMINI"]}\"")
     }
 
     buildTypes {
@@ -89,6 +89,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Gemini
+    implementation(libs.generativeai)
 
     // Retrofit
     implementation(libs.retrofit)

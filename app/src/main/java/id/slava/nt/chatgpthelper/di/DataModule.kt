@@ -22,5 +22,4 @@ val dataModule = module {
         RequestRepositoryImpl(openAIApiService = get())
     }
 
-
 }

@@ -7,9 +7,9 @@ import org.koin.dsl.module
 val presentationModule = module {
 
     viewModel {
-        MainScreenViewModel(getChatGPTResponseUseCase = get())
+        MainScreenViewModel(getChatGPTResponseUseCase = get(),
+            getGeminiResponseUseCase = get()
+        )
     }
-
-
 
 }

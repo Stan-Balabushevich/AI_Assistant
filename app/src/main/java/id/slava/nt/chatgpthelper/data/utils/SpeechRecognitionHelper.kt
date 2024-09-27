@@ -76,14 +76,7 @@ class SpeechRecognitionHelper(private val context: Context, private var language
                 }
             }
 
-            override fun onPartialResults(partialResults: Bundle) {
-//                val matches: ArrayList<String>? =
-//                    partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-//                if (!matches.isNullOrEmpty()) {
-//                    val text = matches[0] // The best match
-//                    onResults(text)
-//                }
-            }
+            override fun onPartialResults(partialResults: Bundle) {}
 
             override fun onEvent(eventType: Int, params: Bundle) {}
         }

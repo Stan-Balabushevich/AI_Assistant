@@ -14,17 +14,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -44,11 +49,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import id.slava.nt.chatgpthelper.data.remote.dt_object.Message
+import id.slava.nt.chatgpthelper.common.AIModels
+import id.slava.nt.chatgpthelper.common.GPTModels
+import id.slava.nt.chatgpthelper.common.GeminiModels
+import id.slava.nt.chatgpthelper.common.aiModels
+import id.slava.nt.chatgpthelper.common.geminiModels
+import id.slava.nt.chatgpthelper.common.gptModels
+import id.slava.nt.chatgpthelper.common.languages
 import id.slava.nt.chatgpthelper.data.utils.PermissionsHandler
 import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
 import id.slava.nt.chatgpthelper.domain.model.ChatMessage
 import id.slava.nt.chatgpthelper.domain.model.Language
+import id.slava.nt.chatgpthelper.domain.model.UserRequest
 import id.slava.nt.chatgpthelper.presentation.buttons.MicrophoneButton
 import id.slava.nt.chatgpthelper.presentation.dialogs.PermissionDialog
 import id.slava.nt.chatgpthelper.presentation.messages.BotMessageBubble
@@ -58,24 +70,26 @@ import id.slava.nt.chatgpthelper.presentation.messages.UserMessageBubble
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
 
-    val languages = listOf(
-        Language("en-EN", "English"),
-        Language("es-ES", "Spanish"),
-        Language("ru-RU", "Russian"),
-        Language("uk-UA", "Ukrainian"),
-        Language("pl-PL", "Polish"),
-        Language("fr-FR", "French"),
-        Language("nrf-NO", "Norwegian"),
-        Language("de-DE", "German"),
-        Language("it-IT", "Italian"),
-        Language("pt-PT", "Portuguese")
-    )
 
+    var aiModel by remember { mutableStateOf(AIModels.GEMINI) }
+    var isAiModelMenuExpanded by remember { mutableStateOf(false) }
     var isLanguageMenuExpanded by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf(Language("en-EN", "English")) } // Default language// Set your desired language here, e.g., "en-EN"
+    var isGptModelMenuExpanded by remember { mutableStateOf(false) }
+    var isGeminiModelMenuExpanded by remember { mutableStateOf(false) }
+    var selectedLanguage by remember {
+        mutableStateOf(
+            Language(
+                "en-EN",
+                "English"
+            )
+        )
+    } // Default language// Set your desired language here, e.g., "en-EN"
+    var selectedGptModel by remember { mutableStateOf(GPTModels.GPT_4_TURBO) }
+    var selectedGeminiModel by remember { mutableStateOf(GeminiModels.GEMINI_1_5_FLASH) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -85,7 +99,8 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
 
 
     // Use `remember` to create instances once per composition
-    val speechRecognitionHelper =  remember { SpeechRecognitionHelper(context, selectedLanguage.code) }
+    val speechRecognitionHelper =
+        remember { SpeechRecognitionHelper(context, selectedLanguage.code) }
 //    val speechRecognitionHelper by remember { mutableStateOf(SpeechRecognitionHelper(context, selectedLanguage)) }
     val permissionHandler = remember { PermissionsHandler(context) }
     var isListening by remember { mutableStateOf(false) } // New state to track if listening
@@ -97,7 +112,7 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
     var permissionsGranted by remember { mutableStateOf(false) }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
     // List to store the entire conversation history
-    val conversationHistory = remember { mutableStateListOf<Message>() }
+    val conversationHistory = remember { mutableStateListOf<UserRequest>() }
 
     // Permission dialog screen
     PermissionDialog(
@@ -111,13 +126,17 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         messages = messages + userMessage // Update the messages list with the user's message
 
         // Add the user's message to the conversation history
-        conversationHistory.add(Message(role = "user", content = messageContent))
+        conversationHistory.add(UserRequest(role = "user", content = messageContent))
 
         // Call the ViewModel to get the response from ChatGPT
 //        viewModelMain.getChatGPTResponse(conversationHistory)
 
         val truncatedHistory = getTruncatedHistory(conversationHistory)
-        viewModelMain.getChatGPTResponse(truncatedHistory)
+
+        if (aiModel == AIModels.GEMINI) viewModelMain.getGeminiResponse(truncatedHistory) else viewModelMain.getChatGPTResponse(
+            truncatedHistory
+        )
+
     }
 
     DisposableEffect(Unit) {
@@ -186,7 +205,8 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                 // Remove LoadingMessage
                 messages = messages.filterNot { it is ChatMessage.LoadingMessage }
 
-                val errorMessage = ChatMessage.ErrorMessage(content = "Error: ${responseState.error}")
+                val errorMessage =
+                    ChatMessage.ErrorMessage(content = "Error: ${responseState.error}")
                 messages = messages + errorMessage
             }
 
@@ -197,7 +217,12 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
                 val botMessage = ChatMessage.BotMessage(content = responseState.response!!)
                 messages = messages + botMessage
 
-                conversationHistory.add(Message(role = "assistant", content = botMessage.content))
+                conversationHistory.add(
+                    UserRequest(
+                        role = "assistant",
+                        content = botMessage.content
+                    )
+                )
             }
         }
     }
@@ -207,135 +232,248 @@ fun SpeechRecognitionScreen(modifier: Modifier = Modifier) {
         listState.animateScrollToItem(messages.size)
     }
 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
 
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .padding(top = 20.dp)
-            .padding(bottom = 20.dp),
-
-        ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Column {
-
-                Text(text = selectedLanguage.name, fontSize = 24.sp, modifier = Modifier.clickable {
-                    isLanguageMenuExpanded = true
-                })
-
-                    DropdownMenu(
-                        expanded = isLanguageMenuExpanded,
-                        onDismissRequest = { isLanguageMenuExpanded = false }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        languages.forEach { language ->
-                            DropdownMenuItem(
-                                text = { Text(text = language.name) },
-                                onClick = {
-                                    selectedLanguage = language
-                                    isLanguageMenuExpanded = false
-                                    speechRecognitionHelper.updateLanguage(selectedLanguage.code)
+                        Column {
+                            Text(
+                                "${aiModel.name}  ⬇\uFE0F",
+                                fontSize = 18.sp,
+                                modifier = Modifier.clickable {
+                                    isAiModelMenuExpanded = true
+                                })
+                            DropdownMenu(
+                                expanded = isAiModelMenuExpanded,
+                                onDismissRequest = { isAiModelMenuExpanded = false }
+                            ) {
+                                aiModels.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = model.name) },
+                                        onClick = {
+                                            aiModel = model
+                                            isAiModelMenuExpanded = false
+
+                                        }
+                                    )
                                 }
-                            )
+                            }
+                        }
+
+                        IconButton(onClick = {
+                            messages = listOf()
+                            conversationHistory.clear()
+                            userInputText = ""
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Clear Chat")
                         }
                     }
+
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* Handle FAB click */ }) {
+                MicrophoneButton(speechRecognitionHelper)
             }
 
-            IconButton(onClick = {
-                messages = listOf()
-                conversationHistory.clear()
-                userInputText = ""
-            }) {
-                Icon(Icons.Default.Delete, contentDescription = "Clear Chat")
-            }
+        },
+        content = { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(bottom = 20.dp),
 
-        }
+                ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            state = listState
-        ) {
+                    Column {
+                        Text(
+                            text = "${selectedLanguage.code.takeLast(2)}  ⬇\uFE0F",
+                            fontSize = 18.sp,
+                            modifier = Modifier.clickable {
+                                isLanguageMenuExpanded = true
+                            })
+                        DropdownMenu(
+                            expanded = isLanguageMenuExpanded,
+                            onDismissRequest = { isLanguageMenuExpanded = false }
+                        ) {
+                            languages.forEach { language ->
+                                DropdownMenuItem(
+                                    text = { Text(text = language.name) },
+                                    onClick = {
+                                        selectedLanguage = language
+                                        isLanguageMenuExpanded = false
+                                        speechRecognitionHelper.updateLanguage(selectedLanguage.code)
+                                    }
+                                )
+                            }
+                        }
+                    }
 
-            items(messages) { message ->
-                when (message) {
-                    is ChatMessage.UserMessage -> {
-                        UserMessageBubble(message.content)
-                    }
-                    is ChatMessage.BotMessage -> {
-                        BotMessageBubble(message.content)
-                    }
-                    is ChatMessage.LoadingMessage -> {
-                        LoadingMessageBubble()
-                    }
-                    is ChatMessage.ErrorMessage -> {
-                        ErrorMessageBubble(message.content)
+                    if (aiModel == AIModels.GEMINI) {
+                        Column {
+                            Text(
+                                text = "${selectedGeminiModel.modelName}  ⬇\uFE0F",
+                                fontSize = 18.sp,
+                                modifier = Modifier.clickable {
+                                    isGeminiModelMenuExpanded = true
+                                })
+                            DropdownMenu(
+                                expanded = isGeminiModelMenuExpanded,
+                                onDismissRequest = { isGeminiModelMenuExpanded = false }
+                            ) {
+                                geminiModels.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = model.modelName) },
+                                        onClick = {
+                                            selectedGeminiModel = model
+                                            isGeminiModelMenuExpanded = false
+                                            viewModelMain.updateGeminiModel(model)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Column {
+                            Text(
+                                text = "${selectedGptModel.modelName}  ⬇\uFE0F",
+                                fontSize = 18.sp,
+                                modifier = Modifier.clickable {
+                                    isGptModelMenuExpanded = true
+                                })
+                            DropdownMenu(
+                                expanded = isGptModelMenuExpanded,
+                                onDismissRequest = { isGptModelMenuExpanded = false }
+                            ) {
+                                gptModels.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = model.modelName) },
+                                        onClick = {
+                                            selectedGptModel = model
+                                            isGptModelMenuExpanded = false
+                                            viewModelMain.updateGptModel(model)
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        HorizontalDivider()
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    state = listState
+                ) {
 
-        if (permissionsGranted) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextField(
-                    value = userInputText,
-                    onValueChange = { userInputText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text( text = when(selectedLanguage.code){
-                        "en-EN" -> "Type your message"
-                        "es-ES" -> "Escribe tu mensaje"
-                        "ru-RU" -> "Type your message in russian"
-                        else -> "Type your message default"
-                    }) },
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(
-                        onSend = {
+                    items(messages) { message ->
+                        when (message) {
+                            is ChatMessage.UserMessage -> {
+                                UserMessageBubble(message.content)
+                            }
+
+                            is ChatMessage.BotMessage -> {
+                                BotMessageBubble(message.content)
+                            }
+
+                            is ChatMessage.LoadingMessage -> {
+                                LoadingMessageBubble()
+                            }
+
+                            is ChatMessage.ErrorMessage -> {
+                                ErrorMessageBubble(message.content)
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                if (permissionsGranted) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .padding(bottom = 46.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        SelectionContainer(
+                            modifier = Modifier.weight(1f)
+                        ) {
+
+                        }
+                        TextField(
+                            value = userInputText,
+                            onValueChange = { userInputText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = {
+                                Text(
+                                    text = when (selectedLanguage.code) {
+                                        "en-EN" -> "Type your message"
+                                        "es-ES" -> "Escribe tu mensaje"
+                                        "ru-RU" -> "Введите ваше сообщение"
+                                        "uk-UA" -> "Введіть своє повідомлення"
+                                        else -> "Type your message"
+                                    }
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(
+                                onSend = {
+                                    if (userInputText.isNotBlank()) {
+                                        sendMessage(userInputText)
+                                        userInputText = ""
+                                    }
+                                }
+                            )
+                        )
+                        IconButton(onClick = {
                             if (userInputText.isNotBlank()) {
                                 sendMessage(userInputText)
                                 userInputText = ""
                             }
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                         }
-                    )
-                )
-                IconButton(onClick = {
-                    if (userInputText.isNotBlank()) {
-                        sendMessage(userInputText)
-                        userInputText = ""
                     }
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                } else {
+                    Text(text = "Permissions not granted")
+                    Button(onClick = {
+                        permissionHandler.requestPermission(Manifest.permission.RECORD_AUDIO)
+                    }) {
+                        Text(text = "Request Permissions")
+                    }
                 }
-                MicrophoneButton(speechRecognitionHelper)
-            }
-        } else {
-            Text(text = "Permissions not granted")
-            Button(onClick = {
-                permissionHandler.requestPermission(Manifest.permission.RECORD_AUDIO)
-            }) {
-                Text(text = "Request Permissions")
             }
         }
-    }
+    )
 }
 
-private fun getTruncatedHistory(history: List<Message>, maxTokens: Int = 6000): List<Message> {
+private fun getTruncatedHistory(
+    history: List<UserRequest>,
+    maxTokens: Int = 6000
+): List<UserRequest> {
     var tokenCount = 0
-    val truncatedHistory = mutableListOf<Message>()
+    val truncatedHistory = mutableListOf<UserRequest>()
 
     // Traverse the list from the most recent message to the oldest
     for (message in history.asReversed()) {

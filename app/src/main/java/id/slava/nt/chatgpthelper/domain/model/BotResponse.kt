@@ -1,5 +1,5 @@
 package id.slava.nt.chatgpthelper.domain.model
 
-data class GptResponse(
+data class BotResponse(
     val response: String?
 )

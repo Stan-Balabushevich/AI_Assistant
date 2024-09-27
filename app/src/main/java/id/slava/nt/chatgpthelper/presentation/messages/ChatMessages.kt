@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,13 +26,15 @@ fun UserMessageBubble(text: String) {
             .padding(8.dp),
         contentAlignment = Alignment.CenterEnd
     ) {
-        Text(
-            text = text,
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp),
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+        SelectionContainer {
+            Text(
+                text = text,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        }
     }
 }
 
@@ -46,7 +49,10 @@ fun BotMessageBubble(text: String) {
         Text(
             text = text,
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp))
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp)
+                )
                 .padding(8.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -64,7 +70,10 @@ fun LoadingMessageBubble() {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp))
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp)
+                )
                 .padding(8.dp)
         ) {
             CircularProgressIndicator(
@@ -91,7 +100,10 @@ fun ErrorMessageBubble(text: String) {
         Text(
             text = text,
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(8.dp))
+                .background(
+                    MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(8.dp)
+                )
                 .padding(8.dp),
             color = MaterialTheme.colorScheme.onErrorContainer
         )
