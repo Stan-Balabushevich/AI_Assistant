@@ -3,7 +3,7 @@ package id.slava.nt.chatgpthelper.domain.usecase
 import id.slava.nt.chatgpthelper.domain.model.UserRequest
 
 class GetTruncatedHistoryUseCase {
-    fun execute(
+    operator fun invoke(
         history: List<UserRequest>,
         maxTokens: Int = 6000
     ): List<UserRequest> {

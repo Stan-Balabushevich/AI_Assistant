@@ -30,7 +30,7 @@ class MainScreenViewModel(
     fun getChatGPTResponse(userMessages: List<UserRequest>) {
 
         // Truncate the conversation history to 100 messages
-        val truncatedHistory = getTruncatedHistoryUseCase.execute(userMessages)
+        val truncatedHistory = getTruncatedHistoryUseCase(userMessages)
 
         viewModelScope.launch {
             getChatGPTResponseUseCase(useSystemMessage,gptModel.modelName, truncatedHistory).collect { result ->
@@ -49,7 +49,7 @@ class MainScreenViewModel(
     fun getGeminiResponse(userMessages: List<UserRequest>) {
 
         // Truncate the conversation history to 100 messages
-        val truncatedHistory = getTruncatedHistoryUseCase.execute(userMessages)
+        val truncatedHistory = getTruncatedHistoryUseCase(userMessages)
 
         viewModelScope.launch {
             getGeminiResponseUseCase(useSystemMessage,geminiModel.modelName, truncatedHistory).collect { result ->
