@@ -22,7 +22,8 @@ import java.io.IOException
 class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : RequestRepository {
 
     override suspend fun getChatGPTResponse(
-        gptModel: String,
+        useSystemMessage: Boolean,
+        chatgptModel: String,
         userMessages: List<UserRequest>
     ): Flow<Resource<BotResponse>> = flow {
         emit(Resource.Loading())
@@ -30,14 +31,16 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
         val apiKey = BuildConfig.API_KEY
         val authHeader = "Bearer $apiKey"
 
-        val messages = listOf(
-            Message(
-                role = "system",
-                content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."
-            ),
-        ) + userMessages.map { it.toMessage() }
+        val systemMessage = Message(
+            role = "system",
+            content = "You are a helpful and knowledgeable tutor specializing in Android Development and teaching Kotlin. " +
+                    "Please note that sometimes I may make mistakes in writing some words, but all my questions are related to Android Development. " +
+                    "Please try to understand what I mean even if there are small errors."
+        )
 
-        val request = ChatGPTRequest(model = gptModel, messages = messages)
+        val messages = if (useSystemMessage) listOf(systemMessage) + userMessages.map { it.toMessage() } else userMessages.map { it.toMessage() }
+
+        val request = ChatGPTRequest(model = chatgptModel, messages = messages)
 
         try {
             val response = openAIApiService.getCompletion(authHeader, request)
@@ -46,7 +49,7 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
             if (gptResponse.response != null) {
                 emit(Resource.Success(gptResponse))
             } else {
-                emit(Resource.Error("No response from GPT-4"))
+                emit(Resource.Error("No response from GPT"))
             }
 
         } catch (e: HttpException) {
@@ -64,6 +67,7 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
     }
 
     override suspend fun getGeminiResponse(
+        useSystemMessage: Boolean,
         geminiModel: String,
         userMessages: List<UserRequest>
     ): Flow<Resource<BotResponse>> = flow {
@@ -77,12 +81,12 @@ class RequestRepositoryImpl(private val openAIApiService: OpenAIApiService) : Re
 
         val systemMessage = Message(
             role = "system",
-            content = "You are a helpful knowledgeable tutor specializing in Android Development and teaching Kotlin."
+            content = "You are a helpful and knowledgeable tutor specializing in Android Development and teaching Kotlin. " +
+                    "Please note that sometimes I may make mistakes in writing some words, but all my questions are related to Android Development. " +
+                    "Please try to understand what I mean even if there are small errors."
         )
 
-        val conversationWithSystem = listOf(systemMessage) + userMessages.map {
-            it.toMessage()
-        }
+        val conversationWithSystem = if (useSystemMessage) listOf(systemMessage) + userMessages.map { it.toMessage() } else userMessages.map { it.toMessage() }
 
 //        val conversationHistory = userMessages.joinToString(separator = "\n") {
 //        if (it.role == "user") "User: ${it.content}" else "Bot: ${it.content}"

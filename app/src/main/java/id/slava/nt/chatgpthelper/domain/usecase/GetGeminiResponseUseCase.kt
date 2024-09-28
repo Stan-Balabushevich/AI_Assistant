@@ -5,6 +5,7 @@ import id.slava.nt.chatgpthelper.domain.repository.RequestRepository
 
 class GetGeminiResponseUseCase(private val repository: RequestRepository)  {
 
-    suspend operator fun invoke(geminiModel: String, userMessages: List<UserRequest>) = repository.getGeminiResponse(geminiModel, userMessages)
+    suspend operator fun invoke(useSystemMessage: Boolean, geminiModel: String, userMessages: List<UserRequest>) =
+        repository.getGeminiResponse(useSystemMessage, geminiModel, userMessages)
 
 }

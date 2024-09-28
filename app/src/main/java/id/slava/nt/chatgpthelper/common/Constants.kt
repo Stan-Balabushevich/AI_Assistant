@@ -1,7 +1,5 @@
 package id.slava.nt.chatgpthelper.common
 
-import id.slava.nt.chatgpthelper.domain.model.Language
-
 
 enum class AIModels{
     CHAT_GPT,
@@ -52,17 +50,18 @@ val geminiModels = listOf(
     GeminiModels.GEMINI_1_0_PRO
 )
 
+enum class LANGUAGES(val languageCode: String, val languageName: String){
+
+    ENGLISH("en-EN", "English"),
+    SPANISH("es-ES", "Spanish"),
+    RUSSIAN("ru-RU", "Russian"),
+    UKRAINIAN("uk-UA", "Ukrainian")
+
+}
 
 val languages = listOf(
-    Language("en-EN", "English"),
-    Language("es-ES", "Spanish"),
-    Language("ru-RU", "Russian"),
-    Language("uk-UA", "Ukrainian"),
-//    Language("pl-PL", "Polish"),
-//    Language("fr-FR", "French"),
-//    Language("nrf-NO", "Norwegian"),
-//    Language("de-DE", "German"),
-//    Language("it-IT", "Italian"),
-//    Language("pt-PT", "Portuguese")
-)
+    LANGUAGES.ENGLISH,
+    LANGUAGES.SPANISH,
+    LANGUAGES.RUSSIAN,
+    LANGUAGES.UKRAINIAN)
 

@@ -5,6 +5,7 @@ import id.slava.nt.chatgpthelper.domain.repository.RequestRepository
 
 class GetChatGPTResponseUseCase(private val repository: RequestRepository)  {
 
-    suspend operator fun invoke(gptModel: String, userMessages: List<UserRequest>) = repository.getChatGPTResponse(gptModel, userMessages)
+    suspend operator fun invoke(useSystemMessage: Boolean, gptModel: String, userMessages: List<UserRequest>) =
+        repository.getChatGPTResponse(useSystemMessage, gptModel, userMessages)
 
 }

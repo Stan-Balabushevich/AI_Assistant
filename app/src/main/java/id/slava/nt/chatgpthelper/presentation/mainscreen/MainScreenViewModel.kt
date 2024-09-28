@@ -8,13 +8,15 @@ import id.slava.nt.chatgpthelper.common.Resource
 import id.slava.nt.chatgpthelper.domain.model.UserRequest
 import id.slava.nt.chatgpthelper.domain.usecase.GetChatGPTResponseUseCase
 import id.slava.nt.chatgpthelper.domain.usecase.GetGeminiResponseUseCase
+import id.slava.nt.chatgpthelper.domain.usecase.GetTruncatedHistoryUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MainScreenViewModel(
     private val getChatGPTResponseUseCase: GetChatGPTResponseUseCase,
-    private val getGeminiResponseUseCase: GetGeminiResponseUseCase
+    private val getGeminiResponseUseCase: GetGeminiResponseUseCase,
+    private val getTruncatedHistoryUseCase: GetTruncatedHistoryUseCase
 ) : ViewModel() {
 
     private val _responseState = MutableStateFlow(ResponseState())
@@ -22,11 +24,16 @@ class MainScreenViewModel(
 
     private var gptModel = GPTModels.GPT_4_TURBO
     private var geminiModel = GeminiModels.GEMINI_1_5_FLASH
+    private var useSystemMessage = true
 
 
     fun getChatGPTResponse(userMessages: List<UserRequest>) {
+
+        // Truncate the conversation history to 100 messages
+        val truncatedHistory = getTruncatedHistoryUseCase.execute(userMessages)
+
         viewModelScope.launch {
-            getChatGPTResponseUseCase(gptModel.modelName, userMessages).collect { result ->
+            getChatGPTResponseUseCase(useSystemMessage,gptModel.modelName, truncatedHistory).collect { result ->
                 when (result) {
                     is Resource.Error -> _responseState.value =
                         ResponseState(error = result.message ?: "An unexpected error occurred")
@@ -40,8 +47,12 @@ class MainScreenViewModel(
     }
 
     fun getGeminiResponse(userMessages: List<UserRequest>) {
+
+        // Truncate the conversation history to 100 messages
+        val truncatedHistory = getTruncatedHistoryUseCase.execute(userMessages)
+
         viewModelScope.launch {
-            getGeminiResponseUseCase(geminiModel.modelName, userMessages).collect { result ->
+            getGeminiResponseUseCase(useSystemMessage,geminiModel.modelName, truncatedHistory).collect { result ->
                 when (result) {
                     is Resource.Error -> _responseState.value =
                         ResponseState(error = result.message ?: "An unexpected error occurred")
@@ -60,6 +71,10 @@ class MainScreenViewModel(
 
     fun updateGeminiModel(model: GeminiModels) {
         geminiModel = model
+    }
+
+    fun updateUseSystemMessage(useSystemMessage: Boolean) {
+        this.useSystemMessage = useSystemMessage
     }
 
 }
