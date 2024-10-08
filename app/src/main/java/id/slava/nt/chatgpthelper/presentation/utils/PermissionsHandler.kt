@@ -1,4 +1,4 @@
-package id.slava.nt.chatgpthelper.data.utils
+package id.slava.nt.chatgpthelper.presentation.utils
 
 import android.app.Activity
 import android.content.Context

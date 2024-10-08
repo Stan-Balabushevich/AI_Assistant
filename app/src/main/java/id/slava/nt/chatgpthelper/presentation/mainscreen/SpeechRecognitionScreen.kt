@@ -55,8 +55,8 @@ import id.slava.nt.chatgpthelper.common.aiModels
 import id.slava.nt.chatgpthelper.common.geminiModels
 import id.slava.nt.chatgpthelper.common.gptModels
 import id.slava.nt.chatgpthelper.common.languages
-import id.slava.nt.chatgpthelper.data.utils.PermissionsHandler
-import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
+import id.slava.nt.chatgpthelper.presentation.utils.PermissionsHandler
+import id.slava.nt.chatgpthelper.presentation.utils.SpeechRecognitionHelper
 import id.slava.nt.chatgpthelper.domain.model.ChatMessage
 import id.slava.nt.chatgpthelper.domain.model.UserRequest
 import id.slava.nt.chatgpthelper.presentation.buttons.Checkbox

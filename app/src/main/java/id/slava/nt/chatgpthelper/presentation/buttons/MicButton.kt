@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import id.slava.nt.chatgpthelper.data.utils.SpeechRecognitionHelper
+import id.slava.nt.chatgpthelper.presentation.utils.SpeechRecognitionHelper
 
 @Composable
 fun MicrophoneButton(
