@@ -3,6 +3,7 @@
 
 An Android application that integrates two AI language models, **ChatGPT** and **Gemini**, allowing users to interact through text or voice messages. The app supports multiple languages and offers customizable settings to enhance your AI experience.
 
+![App Demo](images/ai_assistant.gif)
 
 ## Table of Contents
 
